@@ -17,7 +17,7 @@ mysql -e "GRANT ALL ON thingspeak_production.* TO 'thing'@'%';"
 You can build a local Singularity image named `thingspeak.sif` with:
 
 ```sh
-sudo singularity build thigspeak.sif thigspeak.def
+sudo singularity build thingspeak.sif thingspeak.def
 ```
 
 ## Run
