@@ -1,0 +1,100 @@
+Bootstrap: docker
+From: mchawre/ubuntu-12.04
+
+%labels
+    Author Ivan Mičetić
+    Version 0.1.0
+
+%post
+    # Update system
+    export LC_ALL=C
+    export DEBIAN_FRONTEND=noninteractive
+    export TZ=UTC
+    rm -fv /etc/apt/sources.list.d/proposed.list
+    sed -i 's/archive\.ubuntu/old-releases\.ubuntu/' /etc/apt/sources.list
+    apt-get update
+    apt-get install -y  --no-install-recommends \
+        dialog \
+        apt-utils
+    # Update all otherwise gpg and curl will complain
+    apt-get -y upgrade
+    apt-get -y --no-install-recommends install \
+        build-essential \
+        mysql-client \
+        libmysqlclient-dev \
+        libxml2-dev \
+        libxslt-dev \
+        git-core \
+        curl
+
+    # Install Ruby 2.1.0 via rvm
+    cd /opt
+    curl -sSL https://rvm.io/mpapis.asc | gpg --import -
+    curl -sSL https://rvm.io/pkuczynski.asc | gpg --import -
+    export rvm_path=/opt/rvm
+    # Use insecure connection for rvm download
+    # \curl -sSL https://get.rvm.io | bash -s stable
+    \curl -Lk https://get.rvm.io | bash -s stable
+    export rvm_bin_prvmath=/opt/rvm/bin
+    export GEM_HOME=/opt/rvm/gems/ruby-2.1.0
+    export IRBRC=/opt/rvm/rubies/ruby-2.1.0/.irbrc
+    export MY_RUBY_HOME=/opt/rvm/rubies/ruby-2.1.0
+    export rvm_prefix=/opt
+    export PATH=/opt/rvm/gems/ruby-2.1.0/bin:/opt/rvm/gems/ruby-2.1.0@global/bin:/opt/rvm/rubies/ruby-2.1.0/bin:/opt/rvm/bin:${PATH}
+    export rvm_version="1.29.12 (latest)"
+    export GEM_PATH=/opt/rvm/gems/ruby-2.1.0:/opt/rvm/gems/ruby-2.1.0@global
+    rvm install ruby-2.1.0
+
+    # Install ThingSpeak server from official repository
+    git clone https://github.com/iobridge/thingspeak.git
+    cd /opt/thingspeak
+    gem install minitest -v '4.7.5'
+    gem install json -v '1.8.1'
+    bundle install
+    cp config/database.yml.example config/database.yml
+    # Use database at host
+    sed -i -r -e 's/^([^#].*socket:.*)/#\1\n  host: 127.0.0.1/' config/database.yml
+    # Setup database
+    rake db:create
+    # Fix for newer versions of MySQL
+    sed -ri "s/^(require File.*)/\1\nrequire File\.expand_path\('\.\.\/initializers\/mysql2_adapter', __FILE__\)\n/" \
+      /opt/thingspeak/config/environment.rb
+    echo "require 'active_record/connection_adapters/mysql2_adapter'" >/opt/thingspeak/config/initializers/mysql2_adapter.rb
+    echo "class ActiveRecord::ConnectionAdapters::Mysql2Adapter" >>/opt/thingspeak/config/initializers/mysql2_adapter.rb
+    echo '  NATIVE_DATABASE_TYPES[:primary_key] = "int(11) auto_increment PRIMARY KEY"' >>/opt/thingspeak/config/initializers/mysql2_adapter.rb
+    echo "end" >>/opt/thingspeak/config/initializers/mysql2_adapter.rb
+    rake db:schema:load
+
+    # Clean up
+    du -hs /var/lib/apt/lists/*
+    ls -lA /var/lib/apt/lists/
+
+%test
+    # This will pass if thingSpeak server was installed successfully
+    # and database on host was initialized properly
+    mysql -u thing -pspeak -h 127.0.0.1 -e "SHOW COLUMNS FROM thingspeak_development.users" >/dev/null
+    if [ $? -ne 0 ]; then
+        echo "Error connecting or reading database on host, aborting!"
+        exit 1
+    fi
+
+%environment
+    export LC_ALL=C
+    export rvm_bin_prvmath=/opt/rvm/bin
+    export GEM_HOME=/opt/rvm/gems/ruby-2.1.0
+    export IRBRC=/opt/rvm/rubies/ruby-2.1.0/.irbrc
+    export MY_RUBY_HOME=/opt/rvm/rubies/ruby-2.1.0
+    export rvm_prefix=/opt
+    export PATH=/opt/rvm/gems/ruby-2.1.0/bin:/opt/rvm/gems/ruby-2.1.0@global/bin:/opt/rvm/rubies/ruby-2.1.0/bin:/opt/rvm/bin:${PATH}
+    export rvm_version="1.29.12 (latest)"
+    export GEM_PATH=/opt/rvm/gems/ruby-2.1.0:/opt/rvm/gems/ruby-2.1.0@global
+    export LISTEN_PORT=3000
+
+%runscript
+    echo "Starting rails server ..."
+    cd /opt/thingspeak
+    exec rails server -p $LISTEN_PORT
+
+%startscript
+    cd /opt/thingspeak
+    nohup rails server -p $LISTEN_PORT >/dev/null 2>&1 </dev/null &
