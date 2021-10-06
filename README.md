@@ -34,6 +34,16 @@ singularity instance start thingspeak.sif thingspeak
 singularity instance list
 singularity instance stop thingspeak
 ```
+
+The server should be accessible at http://localhost:3000/.
+
+You can override the listening port with an environment variable:
+
+```sh
+export SINGULARITYENV_LISTEN_PORT=3001
+singularity run thingspeak.sif
+```
+
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at
