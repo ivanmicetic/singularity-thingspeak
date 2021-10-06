@@ -3,7 +3,8 @@
 
 ## Prerequisites
 
-The server needs MySQL database on host. Install and configure it with something like this:
+The server needs a working MySQL database on host. Install it, add a user `thing`/`speak` and enable access to databases `thingspeak_test`, `thingspeak_development` and `thingspeak_production`:
+
 ```sh
 sudo apt install mysql-server
 mysql -e "CREATE USER 'thing'@'%' IDENTIFIED BY 'speak';"
