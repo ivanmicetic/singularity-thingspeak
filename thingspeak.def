@@ -49,6 +49,7 @@ From: mchawre/ubuntu-12.04
     git clone https://github.com/iobridge/thingspeak.git
     cd /opt/thingspeak
     ln -s /tmp
+    ln -s /tmp log
     gem install minitest -v '4.7.5'
     gem install json -v '1.8.1'
     bundle install
@@ -60,17 +61,25 @@ From: mchawre/ubuntu-12.04
     # Fix for newer versions of MySQL
     sed -ri "s/^(require File.*)/\1\nrequire File\.expand_path\('\.\.\/initializers\/mysql2_adapter', __FILE__\)\n/" \
       /opt/thingspeak/config/environment.rb
-    echo "require 'active_record/connection_adapters/mysql2_adapter'" >/opt/thingspeak/config/initializers/mysql2_adapter.rb
-    echo "class ActiveRecord::ConnectionAdapters::Mysql2Adapter" >>/opt/thingspeak/config/initializers/mysql2_adapter.rb
-    echo '  NATIVE_DATABASE_TYPES[:primary_key] = "int(11) auto_increment PRIMARY KEY"' >>/opt/thingspeak/config/initializers/mysql2_adapter.rb
+    echo "require 'active_record/connection_adapters/mysql2_adapter'" \
+        >/opt/thingspeak/config/initializers/mysql2_adapter.rb
+    echo "class ActiveRecord::ConnectionAdapters::Mysql2Adapter" \
+        >>/opt/thingspeak/config/initializers/mysql2_adapter.rb
+    echo '  NATIVE_DATABASE_TYPES[:primary_key] = "int(11) auto_increment PRIMARY KEY"' \
+        >>/opt/thingspeak/config/initializers/mysql2_adapter.rb
     echo "end" >>/opt/thingspeak/config/initializers/mysql2_adapter.rb
     rake db:schema:load
 
     # Clean up
+    apt-get -y purge build-essential \
+        git-core \
+        curl
+    apt-get -y autoremove
+    apt-get clean
     rm -rf /var/lib/apt/lists/*
 
 %test
-    # This will pass if thingSpeak server was installed successfully
+    # This will pass if ThingSpeak server was installed successfully
     # and database on host was initialized properly
     mysql -u thing -pspeak -h 127.0.0.1 -e "SHOW COLUMNS FROM thingspeak_development.users" >/dev/null
     if [ $? -ne 0 ]; then
