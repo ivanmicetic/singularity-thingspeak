@@ -25,14 +25,14 @@ sudo singularity build thingspeak.sif thingspeak.def
 You can run the server using the default run command:
 
 ```sh
-sudo singularity run --writable-tmpfs thingspeak.sif/
+singularity run thingspeak.sif/
 ```
 or as a Singularity instance
 
 ```sh
-sudo singularity instance start --writable-tmpfs thingspeak.sif thingspeak
-sudo singularity instance list
-sudo singularity instance stop thingspeak
+singularity instance start thingspeak.sif thingspeak
+singularity instance list
+singularity instance stop thingspeak
 ```
 ## Contributing
 

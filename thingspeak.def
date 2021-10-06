@@ -48,6 +48,7 @@ From: mchawre/ubuntu-12.04
     # Install ThingSpeak server from official repository
     git clone https://github.com/iobridge/thingspeak.git
     cd /opt/thingspeak
+    ln -s /tmp
     gem install minitest -v '4.7.5'
     gem install json -v '1.8.1'
     bundle install
@@ -66,8 +67,7 @@ From: mchawre/ubuntu-12.04
     rake db:schema:load
 
     # Clean up
-    du -hs /var/lib/apt/lists/*
-    ls -lA /var/lib/apt/lists/
+    rm -rf /var/lib/apt/lists/*
 
 %test
     # This will pass if thingSpeak server was installed successfully
