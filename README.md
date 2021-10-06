@@ -37,7 +37,7 @@ sudo singularity instance stop thingspeak
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at
-https://github.com/nickjer/singularity-r.
+https://github.com/ivanmicetic/singularity-thingspeak.
 
 ## License
 
