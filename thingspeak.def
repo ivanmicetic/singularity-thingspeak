@@ -13,14 +13,14 @@ From: mchawre/ubuntu-12.04
     rm -fv /etc/apt/sources.list.d/proposed.list
     sed -i 's/archive\.ubuntu/old-releases\.ubuntu/' /etc/apt/sources.list
     apt-get update
-    apt-get install -y  --no-install-recommends \
+    apt-get -y --no-install-recommends install \
         dialog \
         apt-utils
-    # Update all otherwise gpg and curl will complain
-    apt-get -y upgrade
+    apt-get -y purge apache2
     apt-get -y --no-install-recommends install \
         build-essential \
         mysql-client \
+        libssl1.0.0 \
         libmysqlclient-dev \
         libxml2-dev \
         libxslt-dev \
