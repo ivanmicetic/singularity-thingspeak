@@ -7,10 +7,10 @@ The server needs a working MySQL database on host. Install it, add a user `thing
 
 ```sh
 sudo apt install mysql-server
-mysql -e "CREATE USER 'thing'@'%' IDENTIFIED BY 'speak';"
-mysql -e "GRANT ALL ON thingspeak_test.* TO 'thing'@'%';"
-mysql -e "GRANT ALL ON thingspeak_development.* TO 'thing'@'%';"
-mysql -e "GRANT ALL ON thingspeak_production.* TO 'thing'@'%';"
+sudo mysql -e "CREATE USER 'thing'@'%' IDENTIFIED WITH mysql_native_password BY 'speak';"
+sudo mysql -e "GRANT ALL ON thingspeak_test.* TO 'thing'@'%';"
+sudo mysql -e "GRANT ALL ON thingspeak_development.* TO 'thing'@'%';"
+sudo mysql -e "GRANT ALL ON thingspeak_production.* TO 'thing'@'%';"
 ``` 
 
 ## Build
@@ -21,6 +21,14 @@ You can build a local Singularity image named `thingspeak.sif` with:
 sudo singularity build thingspeak.sif thingspeak.def
 ```
 
+You can skip database setup and test on host by setting the `SKIP_DB_SETUP` environment variable:
+
+```sh
+sudo env SINGULARITYENV_SKIP_DB_SETUP=true singularity build thingspeak.sif thingspeak.def
+```
+
+
+
 ## Run
 
 You can run the server using the default run command:
@@ -28,7 +36,7 @@ You can run the server using the default run command:
 ```sh
 singularity run thingspeak.sif
 ```
-or as a Singularity instance
+or as a Singularity instance:
 
 ```sh
 singularity instance start thingspeak.sif thingspeak
