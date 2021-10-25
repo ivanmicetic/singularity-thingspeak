@@ -3,7 +3,7 @@ From: mchawre/ubuntu-12.04
 
 %labels
     Author Ivan Mičetić
-    Version 0.1.0
+    Version 0.1.1
 
 %post
     # Update system
@@ -48,43 +48,56 @@ From: mchawre/ubuntu-12.04
     # Install ThingSpeak server from official repository
     git clone https://github.com/iobridge/thingspeak.git
     cd /opt/thingspeak
-    ln -s /tmp
+    rm -fv tmp log
+    ln -s /tmp tmp
     ln -s /tmp log
+    chmod 777 tmp log
     gem install minitest -v '4.7.5'
     gem install json -v '1.8.1'
     bundle install
     cp config/database.yml.example config/database.yml
+
     # Use database at host
     sed -i -r -e 's/^([^#].*socket:.*)/#\1\n  host: 127.0.0.1/' config/database.yml
-    # Setup database
-    rake db:create
+
     # Fix for newer versions of MySQL
     sed -ri "s/^(require File.*)/\1\nrequire File\.expand_path\('\.\.\/initializers\/mysql2_adapter', __FILE__\)\n/" \
-      /opt/thingspeak/config/environment.rb
+       /opt/thingspeak/config/environment.rb
     echo "require 'active_record/connection_adapters/mysql2_adapter'" \
-        >/opt/thingspeak/config/initializers/mysql2_adapter.rb
+       >/opt/thingspeak/config/initializers/mysql2_adapter.rb
     echo "class ActiveRecord::ConnectionAdapters::Mysql2Adapter" \
-        >>/opt/thingspeak/config/initializers/mysql2_adapter.rb
+       >>/opt/thingspeak/config/initializers/mysql2_adapter.rb
     echo '  NATIVE_DATABASE_TYPES[:primary_key] = "int(11) auto_increment PRIMARY KEY"' \
-        >>/opt/thingspeak/config/initializers/mysql2_adapter.rb
+       >>/opt/thingspeak/config/initializers/mysql2_adapter.rb
     echo "end" >>/opt/thingspeak/config/initializers/mysql2_adapter.rb
-    rake db:schema:load
+
+    # Setup database
+    if [ -z ${SKIP_DB_SETUP+x} ]; then
+       rake db:create
+       rake db:schema:load
+    fi
 
     # Clean up
     apt-get -y purge build-essential \
-        git-core \
-        curl
+       git-core \
+       curl
     apt-get -y autoremove
     apt-get clean
     rm -rf /var/lib/apt/lists/*
+    rm -f /tmp/development.log
 
 %test
-    # This will pass if ThingSpeak server was installed successfully
-    # and database on host was initialized properly
-    mysql -u thing -pspeak -h 127.0.0.1 -e "SHOW COLUMNS FROM thingspeak_development.users" >/dev/null
-    if [ $? -ne 0 ]; then
-        echo "Error connecting or reading database on host, aborting!"
-        exit 1
+    if [ -z ${SKIP_DB_SETUP+x} ]; then
+       # This will pass if ThingSpeak server was installed successfully
+       # and database on host was initialized properly
+       mysql -u thing -pspeak -h 127.0.0.1 -e \
+           "SHOW COLUMNS FROM thingspeak_development.users" >/dev/null
+       if [ $? -ne 0 ]; then
+           echo "Error connecting or reading database on host, aborting!"
+           exit 1
+       fi
+    else
+       echo "Skipping test (SKIP_DB_SETUP is set)..."
     fi
 
 %environment
